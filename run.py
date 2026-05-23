@@ -89,12 +89,15 @@ def send_telegram(entry: dict) -> None:
         f"📋 <b>Form ID:</b>      {_fmt(entry.get('Form ID'))}\n"
         f"✅ <b>Call Done:</b>    {_fmt(entry.get('Call Completion'))}"
     )
+    print(f"Sending message:\n{msg}", flush=True)
     resp = requests.post(
         f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage",
         json={"chat_id": TG_CHAT_ID, "text": msg, "parse_mode": "HTML"},
         timeout=10,
     )
-    resp.raise_for_status()
+    if not resp.ok:
+        print(f"Telegram response: {resp.text}", flush=True)
+        resp.raise_for_status()
     result = resp.json()
     if not result.get("ok"):
         raise Exception(f"Telegram error: {result.get('description')}")
