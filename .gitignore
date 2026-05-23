@@ -1,4 +1,5 @@
 .env.example
+.env.example
 .env
 node_modules/
 dist/
