@@ -71,28 +71,26 @@ def fetch_todays_entries() -> list[dict]:
 
 
 # ── Telegram ──────────────────────────────────────────────────────────────────
-import html as _html
-
 def _fmt(val) -> str:
-    return "—" if val is None else _html.escape(str(val))
+    return "—" if val is None else str(val)
 
 
 def send_telegram(entry: dict) -> None:
     msg = (
-        "🆕 <b>New Meeting Booked</b>\n"
+        "🆕 New Meeting Booked\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
-        f"👤 <b>Name:</b>         {_fmt(entry.get('Pre Login Leap User - Pre User → Name'))}\n"
-        f"🆔 <b>Pre User ID:</b>  {_fmt(entry.get('Pre User ID'))}\n"
-        f"📞 <b>Phone:</b>        {_fmt(entry.get('Pre Login Leap User - Pre User → Phone'))}\n"
-        f"📅 <b>Slot Time:</b>    {_fmt(entry.get('Slot Time in IST'))}\n"
-        f"🕐 <b>Created At:</b>   {_fmt(entry.get('Created At IST'))}\n"
-        f"📋 <b>Form ID:</b>      {_fmt(entry.get('Form ID'))}\n"
-        f"✅ <b>Call Done:</b>    {_fmt(entry.get('Call Completion'))}"
+        f"👤 Name:         {_fmt(entry.get('Pre Login Leap User - Pre User → Name'))}\n"
+        f"🆔 Pre User ID:  {_fmt(entry.get('Pre User ID'))}\n"
+        f"📞 Phone:        {_fmt(entry.get('Pre Login Leap User - Pre User → Phone'))}\n"
+        f"📅 Slot Time:    {_fmt(entry.get('Slot Time in IST'))}\n"
+        f"🕐 Created At:   {_fmt(entry.get('Created At IST'))}\n"
+        f"📋 Form ID:      {_fmt(entry.get('Form ID'))}\n"
+        f"✅ Call Done:    {_fmt(entry.get('Call Completion'))}"
     )
     print(f"Sending message:\n{msg}", flush=True)
     resp = requests.post(
         f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage",
-        json={"chat_id": TG_CHAT_ID, "text": msg, "parse_mode": "HTML"},
+        json={"chat_id": TG_CHAT_ID, "text": msg},
         timeout=10,
     )
     if not resp.ok:
