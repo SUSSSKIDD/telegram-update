@@ -1,0 +1,22 @@
+services:
+  - type: cron
+    name: meeting-booked-alerts
+    runtime: python
+    schedule: "*/5 * * * *"
+    buildCommand: pip install -r requirements.txt
+    startCommand: python run.py
+    envVars:
+      - key: METABASE_URL
+        value: https://analytics.leapfinance.com
+      - key: METABASE_QUESTION_ID
+        value: "33308"
+      - key: METABASE_EMAIL
+        sync: false
+      - key: METABASE_PASSWORD
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: UPSTASH_REDIS_URL
+        sync: false
