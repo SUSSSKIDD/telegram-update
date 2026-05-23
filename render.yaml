@@ -4,7 +4,7 @@ services:
     runtime: python
     schedule: "*/5 * * * *"
     buildCommand: pip install -r requirements.txt
-    startCommand: python run.py
+    startCommand: python -u run.py
     envVars:
       - key: METABASE_URL
         value: https://analytics.leapfinance.com
@@ -20,3 +20,5 @@ services:
         sync: false
       - key: UPSTASH_REDIS_URL
         sync: false
+      - key: PYTHONUNBUFFERED
+        value: "1"
