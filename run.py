@@ -4,6 +4,7 @@ import requests
 from datetime import datetime
 import pytz
 import redis
+from flask import Flask, jsonify
 
 # ── Config ────────────────────────────────────────────────────────────────────
 METABASE_URL      = os.environ["METABASE_URL"].rstrip("/")
@@ -13,10 +14,12 @@ QUESTION_ID       = int(os.environ.get("METABASE_QUESTION_ID", "33308"))
 TG_TOKEN          = os.environ["TELEGRAM_BOT_TOKEN"]
 TG_CHAT_ID        = os.environ["TELEGRAM_CHAT_ID"]
 REDIS_URL         = os.environ["UPSTASH_REDIS_URL"]
+PORT              = int(os.environ.get("PORT", "8000"))
 
 IST               = pytz.timezone("Asia/Kolkata")
 ENTRY_TTL_SECONDS = 7 * 24 * 3600
 
+app = Flask(__name__)
 
 # ── Redis ─────────────────────────────────────────────────────────────────────
 _redis = redis.from_url(REDIS_URL, decode_responses=True)
@@ -64,7 +67,6 @@ def fetch_todays_entries() -> list[dict]:
     resp.raise_for_status()
 
     rows = resp.json()
-    # Strip whitespace from keys
     return [{k.strip(): v for k, v in row.items()} for row in rows] if rows else []
 
 
@@ -96,14 +98,18 @@ def send_telegram(entry: dict) -> None:
         raise Exception(f"Telegram error: {result.get('description')}")
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
-if __name__ == "__main__":
-    import traceback
+# ── Flask endpoints ───────────────────────────────────────────────────────────
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"})
+
+
+@app.route("/run")
+def run():
     try:
         entries = fetch_todays_entries()
-        print(f"Total today: {len(entries)} entries")
-
         new_count = 0
+
         for entry in entries:
             uid = str(entry.get("Pre User ID", "")).strip()
             if not uid or uid == "None":
@@ -112,9 +118,16 @@ if __name__ == "__main__":
                 send_telegram(entry)
                 mark_seen(uid)
                 new_count += 1
-                print(f"  Notified: {uid} — {entry.get('Pre Login Leap User - Pre User → Name')}")
+                print(f"Notified: {uid} — {entry.get('Pre Login Leap User - Pre User → Name')}", flush=True)
 
-        print(f"Done. {new_count} new notifications sent.")
-    except Exception:
+        print(f"Done: {new_count} new / {len(entries)} total", flush=True)
+        return jsonify({"status": "ok", "new_entries": new_count, "total": len(entries)})
+
+    except Exception as e:
+        import traceback
         traceback.print_exc()
-        raise
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=PORT)
