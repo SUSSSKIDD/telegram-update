@@ -71,8 +71,10 @@ def fetch_todays_entries() -> list[dict]:
 
 
 # ── Telegram ──────────────────────────────────────────────────────────────────
+import html as _html
+
 def _fmt(val) -> str:
-    return "—" if val is None else str(val)
+    return "—" if val is None else _html.escape(str(val))
 
 
 def send_telegram(entry: dict) -> None:
