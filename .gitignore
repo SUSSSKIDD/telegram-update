@@ -1,0 +1,6 @@
+.env.example
+.env
+node_modules/
+dist/
+build/          
+query.sql
