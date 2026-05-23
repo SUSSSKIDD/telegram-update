@@ -1,7 +1,6 @@
 import os
 import hashlib
 import requests
-import pandas as pd
 from datetime import datetime
 import pytz
 import redis
@@ -16,7 +15,7 @@ TG_CHAT_ID        = os.environ["TELEGRAM_CHAT_ID"]
 REDIS_URL         = os.environ["UPSTASH_REDIS_URL"]
 
 IST               = pytz.timezone("Asia/Kolkata")
-ENTRY_TTL_SECONDS = 7 * 24 * 3600   # keep seen entries for 7 days
+ENTRY_TTL_SECONDS = 7 * 24 * 3600
 
 
 # ── Redis ─────────────────────────────────────────────────────────────────────
@@ -47,7 +46,7 @@ def get_session_token() -> str:
     return resp.json()["id"]
 
 
-def fetch_todays_entries() -> pd.DataFrame:
+def fetch_todays_entries() -> list[dict]:
     today = datetime.now(IST).strftime("%Y-%m-%d")
     token = get_session_token()
 
@@ -65,19 +64,13 @@ def fetch_todays_entries() -> pd.DataFrame:
     resp.raise_for_status()
 
     rows = resp.json()
-    if not rows:
-        return pd.DataFrame()
-
-    df = pd.DataFrame(rows)
-    df.columns = [c.strip() for c in df.columns]
-    return df
+    # Strip whitespace from keys
+    return [{k.strip(): v for k, v in row.items()} for row in rows] if rows else []
 
 
 # ── Telegram ──────────────────────────────────────────────────────────────────
 def _fmt(val) -> str:
-    if val is None or (isinstance(val, float) and val != val):
-        return "—"
-    return str(val)
+    return "—" if val is None else str(val)
 
 
 def send_telegram(entry: dict) -> None:
@@ -105,18 +98,18 @@ def send_telegram(entry: dict) -> None:
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    df = fetch_todays_entries()
-    print(f"Total today: {len(df)} entries")
+    entries = fetch_todays_entries()
+    print(f"Total today: {len(entries)} entries")
 
     new_count = 0
-    for _, row in df.iterrows():
-        uid = str(row.get("Pre User ID", "")).strip()
-        if not uid or uid == "nan":
+    for entry in entries:
+        uid = str(entry.get("Pre User ID", "")).strip()
+        if not uid or uid == "None":
             continue
         if not is_seen(uid):
-            send_telegram(row.to_dict())
+            send_telegram(entry)
             mark_seen(uid)
             new_count += 1
-            print(f"  Notified: {uid} — {row.get('Pre Login Leap User - Pre User → Name')}")
+            print(f"  Notified: {uid} — {entry.get('Pre Login Leap User - Pre User → Name')}")
 
     print(f"Done. {new_count} new notifications sent.")
