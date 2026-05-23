@@ -98,18 +98,23 @@ def send_telegram(entry: dict) -> None:
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    entries = fetch_todays_entries()
-    print(f"Total today: {len(entries)} entries")
+    import traceback
+    try:
+        entries = fetch_todays_entries()
+        print(f"Total today: {len(entries)} entries")
 
-    new_count = 0
-    for entry in entries:
-        uid = str(entry.get("Pre User ID", "")).strip()
-        if not uid or uid == "None":
-            continue
-        if not is_seen(uid):
-            send_telegram(entry)
-            mark_seen(uid)
-            new_count += 1
-            print(f"  Notified: {uid} — {entry.get('Pre Login Leap User - Pre User → Name')}")
+        new_count = 0
+        for entry in entries:
+            uid = str(entry.get("Pre User ID", "")).strip()
+            if not uid or uid == "None":
+                continue
+            if not is_seen(uid):
+                send_telegram(entry)
+                mark_seen(uid)
+                new_count += 1
+                print(f"  Notified: {uid} — {entry.get('Pre Login Leap User - Pre User → Name')}")
 
-    print(f"Done. {new_count} new notifications sent.")
+        print(f"Done. {new_count} new notifications sent.")
+    except Exception:
+        traceback.print_exc()
+        raise
