@@ -8,18 +8,27 @@ SERVICE_ACCOUNT_JSON = os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"]
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
-# Maps our Metabase field → the header name to look for in the sheet (case-insensitive)
-FIELD_HEADER_MAP = {
-    "Pre Login Leap User - Pre User → Name": "name",
-    "Pre User ID":                           "pre user id",
-    "Pre Login Leap User - Pre User → Phone": "phone",
-    "Created At IST":                        "created at",
-    "Slot Time in IST":                      "slot",
-    "Call Completion":                       "call",
+# Ordered headers that will be written to row 1 if the sheet is empty
+HEADERS = [
+    "Name",
+    "Pre User ID",
+    "Phone Number",
+    "Date & Time of Booking (IST)",
+    "Slot Booked (IST)",
+    "Call Completed",
+]
+
+# Maps each header → the Metabase field key
+HEADER_TO_FIELD = {
+    "Name":                        "Pre Login Leap User - Pre User → Name",
+    "Pre User ID":                 "Pre User ID",
+    "Phone Number":                "Pre Login Leap User - Pre User → Phone",
+    "Date & Time of Booking (IST)": "Created At IST",
+    "Slot Booked (IST)":           "Slot Time in IST",
+    "Call Completed":              "Call Completion",
 }
 
 _sheet = None
-_col_indices: dict[str, int] | None = None  # field_key -> 0-based column index
 
 
 def _get_sheet():
@@ -33,44 +42,27 @@ def _get_sheet():
     return _sheet
 
 
-def _get_col_indices() -> dict[str, int]:
-    global _col_indices
-    if _col_indices is not None:
-        return _col_indices
-
-    headers = [h.strip().lower() for h in _get_sheet().row_values(1)]
-    _col_indices = {}
-
-    for field, keyword in FIELD_HEADER_MAP.items():
-        for idx, header in enumerate(headers):
-            if keyword in header:
-                _col_indices[field] = idx
-                break
-
-    found = list(_col_indices.keys())
-    missing = [f for f in FIELD_HEADER_MAP if f not in _col_indices]
-    print(f"Sheets: matched columns {found}", flush=True)
-    if missing:
-        print(f"Sheets: WARNING — could not find columns for {missing}", flush=True)
-
-    return _col_indices
+def _ensure_headers():
+    sheet = _get_sheet()
+    existing = sheet.row_values(1)
+    if not any(existing):
+        sheet.append_row(HEADERS, value_input_option="USER_ENTERED")
+        print("Sheets: wrote header row", flush=True)
 
 
 def log_entry(entry: dict) -> None:
+    _ensure_headers()
     sheet = _get_sheet()
-    col_indices = _get_col_indices()
 
-    if not col_indices:
-        print("Sheets: no columns matched, skipping log", flush=True)
-        return
+    # Read current headers to find column positions (handles pre-existing sheets too)
+    headers = sheet.row_values(1)
+    row = [""] * len(headers)
 
-    # Build a row sized to the rightmost column we need to write
-    max_col = max(col_indices.values())
-    row = [""] * (max_col + 1)
-
-    for field, col_idx in col_indices.items():
-        val = entry.get(field)
-        row[col_idx] = "" if val is None else str(val)
+    for idx, header in enumerate(headers):
+        field = HEADER_TO_FIELD.get(header)
+        if field:
+            val = entry.get(field)
+            row[idx] = "" if val is None else str(val)
 
     sheet.append_row(row, value_input_option="USER_ENTERED")
     print(f"Sheets: logged Pre User ID {entry.get('Pre User ID')}", flush=True)
