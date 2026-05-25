@@ -65,5 +65,5 @@ def log_entry(entry: dict) -> None:
             val = entry.get(field)
             row[idx] = "" if val is None else str(val)
 
-    sheet.append_row(row, value_input_option="USER_ENTERED")
+    _get_sheet().append_row(row, value_input_option="USER_ENTERED")
     print(f"Sheets: logged Pre User ID {entry.get('Pre User ID')}", flush=True)
