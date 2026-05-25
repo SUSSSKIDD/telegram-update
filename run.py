@@ -5,6 +5,7 @@ from datetime import datetime
 import pytz
 import redis
 from flask import Flask, jsonify
+from sheets import log_entry
 
 # ── Config ────────────────────────────────────────────────────────────────────
 METABASE_URL      = os.environ["METABASE_URL"].rstrip("/")
@@ -119,6 +120,7 @@ def run():
                 continue
             if not is_seen(uid):
                 send_telegram(entry)
+                log_entry(entry)
                 mark_seen(uid)
                 new_count += 1
                 print(f"Notified: {uid} — {entry.get('Pre Login Leap User - Pre User → Name')}", flush=True)
