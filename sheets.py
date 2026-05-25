@@ -42,20 +42,21 @@ def _get_sheet():
     return _sheet
 
 
+def _get_headers() -> list[str]:
+    result = _get_sheet().get("A1:Z1")
+    return result[0] if result else []
+
+
 def _ensure_headers():
-    sheet = _get_sheet()
-    existing = sheet.row_values(1)
-    if not any(existing):
-        sheet.append_row(HEADERS, value_input_option="USER_ENTERED")
+    if not _get_headers():
+        _get_sheet().append_row(HEADERS, value_input_option="USER_ENTERED")
         print("Sheets: wrote header row", flush=True)
 
 
 def log_entry(entry: dict) -> None:
     _ensure_headers()
-    sheet = _get_sheet()
 
-    # Read current headers to find column positions (handles pre-existing sheets too)
-    headers = sheet.row_values(1)
+    headers = _get_headers()
     row = [""] * len(headers)
 
     for idx, header in enumerate(headers):
