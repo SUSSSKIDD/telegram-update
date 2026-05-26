@@ -134,5 +134,23 @@ def run():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+@app.route("/debug-sheet")
+def debug_sheet():
+    try:
+        from sheets import _get_headers, HEADER_TO_FIELD
+        headers = _get_headers()
+        matched = {h: HEADER_TO_FIELD[h] for h in headers if h in HEADER_TO_FIELD}
+        unmatched = [h for h in headers if h not in HEADER_TO_FIELD]
+        return jsonify({
+            "headers_in_sheet": headers,
+            "matched": matched,
+            "unmatched": unmatched,
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=PORT)
