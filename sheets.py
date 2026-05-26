@@ -57,13 +57,18 @@ def log_entry(entry: dict) -> None:
     _ensure_headers()
 
     headers = _get_headers()
+    print(f"Sheets: headers found → {headers}", flush=True)
+
     row = [""] * len(headers)
+    matched = []
 
     for idx, header in enumerate(headers):
         field = HEADER_TO_FIELD.get(header)
         if field:
             val = entry.get(field)
             row[idx] = "" if val is None else str(val)
+            matched.append(header)
 
+    print(f"Sheets: matched {matched}, row → {row}", flush=True)
     _get_sheet().append_row(row, value_input_option="USER_ENTERED")
     print(f"Sheets: logged Pre User ID {entry.get('Pre User ID')}", flush=True)
