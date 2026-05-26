@@ -134,6 +134,27 @@ def run():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+@app.route("/test-sheet")
+def test_sheet():
+    try:
+        from sheets import log_entry
+        dummy = {
+            "Pre Login Leap User - Pre User → Name": "TEST ENTRY — DELETE ME",
+            "Pre User ID":                           "000000",
+            "Pre Login Leap User - Pre User → Phone": "0000000000",
+            "Created At IST":                        "2000-01-01T00:00:00",
+            "Slot Time in IST":                      "2000-01-01T00:00:00",
+            "Form ID":                               "TEST",
+            "Call Completion":                       "False",
+        }
+        log_entry(dummy)
+        return jsonify({"status": "ok", "message": "Test row written — safe to delete from sheet, no Redis entry created"})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 @app.route("/debug-sheet")
 def debug_sheet():
     try:
