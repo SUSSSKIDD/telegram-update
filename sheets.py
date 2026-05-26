@@ -53,6 +53,11 @@ def _ensure_headers():
         print("Sheets: wrote header row", flush=True)
 
 
+def _next_empty_row() -> int:
+    col_a = _get_sheet().col_values(1)
+    return len(col_a) + 1
+
+
 def log_entry(entry: dict) -> None:
     _ensure_headers()
 
@@ -69,7 +74,9 @@ def log_entry(entry: dict) -> None:
             row[idx] = "" if val is None else str(val)
             matched.append(header)
 
-    print(f"Sheets: matched {matched}, row → {row}", flush=True)
-    result = _get_sheet().append_row(row, value_input_option="USER_ENTERED")
-    updated_range = result.get("updates", {}).get("updatedRange", "unknown")
-    print(f"Sheets: logged Pre User ID {entry.get('Pre User ID')} → range {updated_range}", flush=True)
+    target_row = _next_empty_row()
+    print(f"Sheets: matched {matched}, writing to row {target_row} → {row}", flush=True)
+
+    sheet = _get_sheet()
+    sheet.update(f"A{target_row}", [row], value_input_option="USER_ENTERED")
+    print(f"Sheets: logged Pre User ID {entry.get('Pre User ID')} → row {target_row}", flush=True)
