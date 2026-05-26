@@ -70,5 +70,6 @@ def log_entry(entry: dict) -> None:
             matched.append(header)
 
     print(f"Sheets: matched {matched}, row → {row}", flush=True)
-    _get_sheet().append_row(row, value_input_option="USER_ENTERED")
-    print(f"Sheets: logged Pre User ID {entry.get('Pre User ID')}", flush=True)
+    result = _get_sheet().append_row(row, value_input_option="USER_ENTERED")
+    updated_range = result.get("updates", {}).get("updatedRange", "unknown")
+    print(f"Sheets: logged Pre User ID {entry.get('Pre User ID')} → range {updated_range}", flush=True)
