@@ -4,7 +4,7 @@ import requests
 from datetime import datetime
 import pytz
 import redis
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from sheets import log_entry
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -169,6 +169,37 @@ def debug_sheet():
             "matched": matched,
             "unmatched": unmatched,
         })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/reprocess")
+def reprocess():
+    try:
+        uids = request.args.getlist("uid")
+        if not uids:
+            return jsonify({"status": "error", "message": "Pass ?uid=XXX&uid=YYY"}), 400
+
+        entries = fetch_todays_entries()
+        entry_map = {str(e.get("Pre User ID", "")).strip(): e for e in entries}
+
+        results = []
+        for uid in uids:
+            uid = uid.strip()
+            _redis.delete(_entry_key(uid))
+            entry = entry_map.get(uid)
+            if not entry:
+                results.append({"uid": uid, "status": "not found in today's data"})
+                continue
+            send_telegram(entry)
+            log_entry(entry)
+            mark_seen(uid)
+            results.append({"uid": uid, "status": "reprocessed"})
+            print(f"Reprocessed: {uid}", flush=True)
+
+        return jsonify({"status": "ok", "results": results})
     except Exception as e:
         import traceback
         traceback.print_exc()
