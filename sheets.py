@@ -16,6 +16,8 @@ HEADERS = [
     "Date & Time of Booking (IST)",
     "Slot Booked (IST)",
     "Call Completed",
+    "Quick Form Filled",
+    "Source",
 ]
 
 # Maps each header → the Metabase field key
@@ -26,6 +28,7 @@ HEADER_TO_FIELD = {
     "Date & Time of Booking (IST)": "Created At IST",
     "Slot Booked (IST)":           "Slot Time in IST",
     "Call Completed":              "Call Completion",
+    "Source":                      "Booking Source",
 }
 
 _sheet = None
@@ -67,7 +70,13 @@ def log_entry(entry: dict) -> None:
     row = [""] * len(headers)
     matched = []
 
+    source = entry.get("Booking Source", "")
+
     for idx, header in enumerate(headers):
+        if header == "Quick Form Filled":
+            row[idx] = "Yes" if source == "WEB_FORM" else ""
+            matched.append(header)
+            continue
         field = HEADER_TO_FIELD.get(header)
         if field:
             val = entry.get(field)

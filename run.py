@@ -77,6 +77,7 @@ def _fmt(val) -> str:
 
 
 def send_telegram(entry: dict) -> None:
+    source = entry.get("Booking Source", "")
     msg = (
         "🆕 New Meeting Booked\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
@@ -85,9 +86,10 @@ def send_telegram(entry: dict) -> None:
         f"📞 Phone:        {_fmt(entry.get('Pre Login Leap User - Pre User → Phone'))}\n"
         f"📅 Slot Time:    {_fmt(entry.get('Slot Time in IST'))}\n"
         f"🕐 Created At:   {_fmt(entry.get('Created At IST'))}\n"
-        f"📋 Form ID:      {_fmt(entry.get('Form ID'))}\n"
-        f"✅ Call Done:    {_fmt(entry.get('Call Completion'))}"
+        f"🔗 Source:       {_fmt(source)}"
     )
+    if source == "WEB_CALL":
+        msg += f"\n✅ Call Done:    {_fmt(entry.get('Call Completion'))}"
     print(f"Sending message:\n{msg}", flush=True)
     resp = requests.post(
         f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage",
